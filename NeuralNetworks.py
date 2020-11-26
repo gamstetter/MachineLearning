@@ -12,7 +12,7 @@ class Data:
         self.error = []
 
     def generate_random_pairs(self, num_paris):
-        self.pairs += [(random.randint(0, 10000), random.randint(0, 10000)) for _ in num_paris]
+        self.pairs += [(random.randint(0, 10000), random.randint(0, 10000)) for _ in range(num_paris)]
 
     @staticmethod
     def pair_matches_concept(pair):
