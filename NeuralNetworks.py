@@ -12,14 +12,14 @@ class Data:
     def __init__(self):
         # Initialize class variables
         self.pairs = []
-        self.error = []
+        self.truth_values = []
 
     def generate_random_pairs(self, num_paris):
-        self.pairs += [(random.randint(0, 10000), random.randint(0, 10000)) for _ in range(num_paris)]
-        
+        for i in range(num_paris):
+            self.pairs.append((random.randint(0, 10000), random.randint(0, 10000)))
+            self.truth_values.append(self.pair_matches_concept(self.pairs[i]))
 
-    @staticmethod
-    def pair_matches_concept(pair):
+    def pair_matches_concept(self, pair):
         """
         Return a bool based on whether they are in the positive class (true) or the negative class.
         Is what would be called an 'activation function'
@@ -56,49 +56,63 @@ class Delta:
         return float(correct/float(len(predicted)))
 
     def get_weights(self):
-        return self.get_weights
+        return self.weights
 
     def fit_with_update(self):
         # Find some sort of weight
-        self.weights=[0.0 for i in range(len(data_obj.pairs) + 1)]
+        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
         # For each iteration
-        for i in range(iterations):
+        for i in range(self.iterations):
             # For each example
-            for j in range(len(data_obj.pairs)):
-                interested_pair = data_obj.paris[j]
+            for j in range(len(self.data_obj.pairs)):
+                interested_pair = self.data_obj.pairs[j]
                 predicted = self.activate(interested_pair)
-                #check for misclassification
-                if(y.iloc[j]==predicted):
+                true_solution = self.data_obj.truth_values[j]
+                # Check if something went wrong.
+                if(true_solution == predicted):
+                    # Classified correctly
                     pass
                 else:
-                    #calculate the error value
-                    error=y.iloc[j]-predicted
-                    #updation of threshold
-                    self.weights[0]=self.weights[0] + self.learning_rate * error
-                    #updation of associated self.weights acccording to Delta rule
-                    for k in range(len(x)):
-                        self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * x[k]
+                    #Something went wrong. Find the error.
+                    error = true_solution - predicted
+                    # Change the weight.
+                    self.weights[0] = self.weights[0] + self.learning_rate * error
+                    # Do the updating of all the weights due to the changes. 
+                    for k in range(len(self.data_obj.pairs)):
+                        self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[k]
 
     def fit_no_update(self):
         # Find some sort of weight
-        self.weights=[0.0 for i in range(len(data_obj.pairs) + 1)]
+        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
         # For each iteration
-        for i in range(iterations):
+        for i in range(self.iterations):
             # For each example
-            for j in range(len(data_obj.pairs)):
-                interested_pair = data_obj.paris[j]
+            for j in range(len(self.data_obj.pairs)):
+                interested_pair = self.data_obj.pairs[j]
                 predicted = self.activate(interested_pair)
-                #check for misclassification
-                if(y.iloc[j]==predicted):
+                true_solution = self.data_obj.truth_values[j]
+                # Check if something went wrong.
+                if(true_solution == predicted):
+                    # Classified correctly
                     pass
                 else:
-                    #calculate the error value
-                    error=y.iloc[j]-predicted
-                    #updation of threshold
-                    self.weights[0]=self.weights[0] + self.learning_rate * error
+                    #Something went wrong. Find the error.
+                    error = true_solution - predicted
+                    # Change the weight.
+                    self.weights[0] = self.weights[0] + self.learning_rate * error
+                    # Don't update.
 
 if __name__ == '__main__':
     data = Data()
     data.generate_random_pairs(100)
-    delta_model = Delta(data)
+    # Get a set of learning rates to test and explain.
+    learning_rates = [0.001, 0.01, 0.1, 0.2, 0.3]
+    iterations = [5, 10, 50, 100]
+    types = ["Standard Delta", "Icremental Delta", "Decaying Rates", "Adaptive Rates"]
+    for i in range(len(learning_rates)):
+        for j in range(len(iterations)):
+            for k in range(len(types)):
+                delta_model = Delta(data, iterations[j], learning_rates[i])
+                delta_model.fit_with_update()
+                print delta_model.get_weights()
 
