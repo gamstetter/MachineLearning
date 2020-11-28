@@ -103,11 +103,51 @@ class Delta:
                     self.weights[0] = self.weights[0] + self.learning_rate * error
                     # Don't update.
 
-    def fit_with_decay(self):
-        pass
+    def fit_with_decay(self, decay_rate):
+        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+        initial_learning_rate = self.learning_rate
+        # For each iteration
+        for i in range(self.iterations):
+            # For each example
+            for j in range(len(self.data_obj.pairs)):
+                interested_pair = self.data_obj.pairs[j]
+                predicted = self.activate(interested_pair)
+                true_solution = self.data_obj.truth_values[j]
+                # Check if something went wrong.
+                if(true_solution == predicted):
+                    # Classified correctly
+                    pass
+                else:
+                    #Something went wrong. Find the error.
+                    error = true_solution - predicted
+                    # Change the weight.
+                    self.weights[0] = self.weights[0] + self.learning_rate * error
+                    # Do the updating of all the weights due to the changes. 
+                    for k in range(len(self.data_obj.pairs[j])):
+                        self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
+            self.learning_rate = (decay_rate ** (self.iterations + 1)) * initial_learning_rate
 
     def fit_with_adaptive(self):
-        pass
+        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+        # For each iteration
+        for i in range(self.iterations):
+            # For each example
+            for j in range(len(self.data_obj.pairs)):
+                interested_pair = self.data_obj.pairs[j]
+                predicted = self.activate(interested_pair)
+                true_solution = self.data_obj.truth_values[j]
+                # Check if something went wrong.
+                if(true_solution == predicted):
+                    # Classified correctly
+                    pass
+                else:
+                    #Something went wrong. Find the error.
+                    error = true_solution - predicted
+                    # Change the weight.
+                    self.weights[0] = self.weights[0] + self.learning_rate * error
+                    # Do the updating of all the weights due to the changes. 
+                    for k in range(len(self.data_obj.pairs[j])):
+                        self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
 
 if __name__ == '__main__':
     data = Data()
@@ -130,11 +170,12 @@ if __name__ == '__main__':
     
     
     
-    delta_model = Delta(data, 50, 0.8)
-    delta_model.fit_with_decay()
+    delta_model = Delta(data, 50, 0.2)
+    delta_model.fit_with_decay(0.8)
     print delta_model.get_weights()
-
+    """
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_adaptive()
     print delta_model.get_weights()
+    """
 
