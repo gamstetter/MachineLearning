@@ -52,7 +52,9 @@ class Delta:
         return end_predictions
 
     def get_accuracy(self):
-        return float(len(self.data_obj.truth_values) / len(self.data_obj.pairs))
+        end_predictions = self.predict(self.data_obj.pairs)
+        num_correct = [end_predictions[i] == self.data_obj.truth_values[i] for i in range(len(end_predictions))].count(True)
+        return float(num_correct / len(self.data_obj.pairs))
 
     def get_weights(self):
         return self.weights
