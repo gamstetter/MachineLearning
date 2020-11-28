@@ -16,7 +16,7 @@ class Data:
 
     def generate_random_pairs(self, num_paris):
         for i in range(num_paris):
-            self.pairs.append((random.randint(0, 10000), random.randint(0, 10000)))
+            self.pairs.append((random.randint(-10000, 10000), random.randint(-10000, 10000)))
             self.truth_values.append(self.pair_matches_concept(self.pairs[i]))
 
     def pair_matches_concept(self, pair):
@@ -24,7 +24,8 @@ class Data:
         Return a bool based on whether they are in the positive class (true) or the negative class.
         Is what would be called an 'activation function'
         """
-        return pair[0] + (2 * pair[1]) - 2 > 0
+        return_value = pair[0] + (2 * pair[1]) - 2 > 0
+        return return_value
 
 
 class Delta:
@@ -37,6 +38,7 @@ class Delta:
     def activate(self, interested_pair):
         activation = self.weights[0]
         activation += np.dot(self.weights[1:], interested_pair)
+        print activation
         if activation >= 0:
             return 1
         else:
@@ -78,8 +80,8 @@ class Delta:
                     # Change the weight.
                     self.weights[0] = self.weights[0] + self.learning_rate * error
                     # Do the updating of all the weights due to the changes. 
-                    for k in range(len(self.data_obj.pairs)):
-                        self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[k]
+                    for k in range(len(self.data_obj.pairs[j])):
+                        self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
 
     def fit_no_update(self):
         # Find some sort of weight
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     # Get a set of learning rates to test and explain.
     learning_rates = [0.001, 0.01, 0.1, 0.2, 0.3]
     iterations = [5, 10, 50, 100]
-    types = ["Standard Delta", "Icremental Delta", "Decaying Rates", "Adaptive Rates"]
+    types = ["Standard Delta", "Incremental Delta", "Decaying Rates", "Adaptive Rates"]
     for i in range(len(learning_rates)):
         for j in range(len(iterations)):
             for k in range(len(types)):
