@@ -129,8 +129,11 @@ class Delta:
                         self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
             self.learning_rate = (decay_rate ** (self.iterations + 1)) * initial_learning_rate
 
-    def fit_with_adaptive(self):
+    def fit_with_adaptive(self, threshold, learning_rate_decrease_rate, learning_rate_increase_rate):
         self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+        initial_learning_rate = self.learning_rate
+        incorrect = 0
+        previous_error = 0.0
         # For each iteration
         for i in range(self.iterations):
             # For each example
@@ -143,6 +146,7 @@ class Delta:
                     # Classified correctly
                     pass
                 else:
+                    incorrect = incorrect + 1
                     #Something went wrong. Find the error.
                     error = true_solution - predicted
                     # Change the weight.
@@ -150,6 +154,17 @@ class Delta:
                     # Do the updating of all the weights due to the changes. 
                     for k in range(len(self.data_obj.pairs[j])):
                         self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
+            if i > 0:
+                # Don't do it on the first pass. 
+                if incorrect / float(len(self.data_obj.pairs)) > threshold:
+                    # Discard the previous weights.
+                    self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+                    self.learning_rate = self.learning_rate * learning_rate_decrease_rate
+                else:
+                    self.learning_rate = self.learning_rate * learning_rate_increase_rate
+            previous_error = incorrect / float(len(self.data_obj.pairs))
+
+
 
 if __name__ == '__main__':
     data = Data()
@@ -173,8 +188,8 @@ if __name__ == '__main__':
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_decay(0.8)
     print delta_model.get_weights()
-    
+
     delta_model = Delta(data, 50, 0.2)
-    delta_model.fit_with_adaptive()
+    delta_model.fit_with_adaptive(.9, .95, 1.05)
     print delta_model.get_weights()
 
