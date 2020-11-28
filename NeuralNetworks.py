@@ -103,6 +103,12 @@ class Delta:
                     self.weights[0] = self.weights[0] + self.learning_rate * error
                     # Don't update.
 
+    def fit_with_decay(self):
+        pass
+
+    def fit_with_adaptive(self):
+        pass
+
 if __name__ == '__main__':
     data = Data()
     data.generate_random_pairs(100)
@@ -110,7 +116,7 @@ if __name__ == '__main__':
     learning_rates = [0.001, 0.01, 0.1, 0.2, 0.3]
     iterations = [5, 10, 50, 100]
     types = ["Standard Delta", "Incremental Delta", "Decaying Rates", "Adaptive Rates"]
-    for k in range(len(types)):
+    for k in range(len(types) - 2):
         for i in range(len(learning_rates)):
             for j in range(len(iterations)):
                     if k == 1:
@@ -124,11 +130,11 @@ if __name__ == '__main__':
     
     
     
-    delta_model = Delta(data, iterations[j], 0.8)
+    delta_model = Delta(data, 50, 0.8)
     delta_model.fit_with_decay()
     print delta_model.get_weights()
 
-    delta_model = Delta(data, iterations[j], learning_rates[i])
+    delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_adaptive()
     print delta_model.get_weights()
 
