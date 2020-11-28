@@ -173,6 +173,7 @@ if __name__ == '__main__':
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_decay(0.8)
     print delta_model.get_weights()
+    
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_adaptive()
     print delta_model.get_weights()
