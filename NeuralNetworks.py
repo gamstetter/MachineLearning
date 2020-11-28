@@ -38,7 +38,6 @@ class Delta:
     def activate(self, interested_pair):
         activation = self.weights[0]
         activation += np.dot(self.weights[1:], interested_pair)
-        print activation
         if activation >= 0:
             return 1
         else:
@@ -111,10 +110,25 @@ if __name__ == '__main__':
     learning_rates = [0.001, 0.01, 0.1, 0.2, 0.3]
     iterations = [5, 10, 50, 100]
     types = ["Standard Delta", "Incremental Delta", "Decaying Rates", "Adaptive Rates"]
-    for i in range(len(learning_rates)):
-        for j in range(len(iterations)):
-            for k in range(len(types)):
-                delta_model = Delta(data, iterations[j], learning_rates[i])
-                delta_model.fit_with_update()
-                print delta_model.get_weights()
+    for k in range(len(types)):
+        for i in range(len(learning_rates)):
+            for j in range(len(iterations)):
+                    if k == 1:
+                        delta_model = Delta(data, iterations[j], learning_rates[i])
+                        delta_model.fit_no_update()
+                        print delta_model.get_weights()
+                    if k == 2:
+                        delta_model = Delta(data, iterations[j], learning_rates[i])
+                        delta_model.fit_with_update()
+                        print delta_model.get_weights()
+    
+    
+    
+    delta_model = Delta(data, iterations[j], 0.8)
+    delta_model.fit_with_decay()
+    print delta_model.get_weights()
+
+    delta_model = Delta(data, iterations[j], learning_rates[i])
+    delta_model.fit_with_adaptive()
+    print delta_model.get_weights()
 
