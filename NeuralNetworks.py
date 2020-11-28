@@ -5,6 +5,7 @@
 """
 
 import random
+import time
 import numpy as np
 
 
@@ -163,18 +164,26 @@ if __name__ == '__main__':
             for j in range(len(iterations)):
                     if k == 0:
                         delta_model = Delta(data, iterations[j], learning_rates[i])
+                        start_time = time.time()
                         delta_model.fit_no_update()
                         print delta_model.get_weights()
+                        print "--- " + str(time.time() - start_time) + " seconds ---"
                     if k == 1:
                         delta_model = Delta(data, iterations[j], learning_rates[i])
+                        start_time = time.time()
                         delta_model.fit_with_update()
                         print delta_model.get_weights()
-                
+                        print "--- " + str(time.time() - start_time) + " seconds ---"
+
+    start_time = time.time()
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_decay(0.8)
     print delta_model.get_weights()
-    
+    print "--- " + str(time.time() - start_time) + " seconds ---"
+
+    start_time = time.time()
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_adaptive()
     print delta_model.get_weights()
+    print "--- " + str(time.time() - start_time) + " seconds ---"
 
