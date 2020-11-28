@@ -4,6 +4,7 @@
     Assignment 4, Neural Networks
 """
 
+import matplotlib.pyplot as plt
 import random
 import time
 import numpy as np
@@ -50,12 +51,8 @@ class Delta:
             end_predictions.append(self.activate(test_set[i]))
         return end_predictions
 
-    def get_accuracy(self, predicted, truth):
-        correct = 0
-        for i in range(len(predicted)):
-            if predicted[i] ==  truth[i]:
-                correct = correct + 1
-        return float(correct/float(len(predicted)))
+    def get_accuracy(self):
+        return float(len(self.data_obj.truth_values) / len(self.data_obj.pairs))
 
     def get_weights(self):
         return self.weights
@@ -83,6 +80,7 @@ class Delta:
 #                    Do the updating of all the weights due to the changes. 
                     for k in range(len(self.data_obj.pairs[j])):
                         self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
+
     def fit_no_update(self):
         # Find some sort of weight
         self.weights=[1.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
@@ -167,6 +165,16 @@ class Delta:
 
 
 
+
+def show_plot(iterations, accuracies, type, learning_rate):
+    plt.scatter(iterations, accuracies)
+    plt.xlabel("Num Iterations")
+    plt.ylabel("Accuracy")
+    title = type + " Accuracy for " + str(learning_rate)
+    plt.suptitle(title)
+    plt.show()
+
+
 if __name__ == '__main__':
     data = Data()
     data.generate_random_pairs(100)
@@ -176,19 +184,23 @@ if __name__ == '__main__':
     types = ["Standard Delta", "Incremental Delta", "Decaying Rates", "Adaptive Rates"]
     for k in range(len(types) - 2):
         for i in range(len(learning_rates)):
+            accuracy = []
             for j in range(len(iterations)):
-                    if k == 0:
-                        delta_model = Delta(data, iterations[j], learning_rates[i])
-                        start_time = time.time()
-                        delta_model.fit_no_update()
-                        print delta_model.get_weights()
-                        print "--- " + str(time.time() - start_time) + " seconds ---"
-                    if k == 1:
-                        delta_model = Delta(data, iterations[j], learning_rates[i])
-                        start_time = time.time()
-                        delta_model.fit_with_update()
-                        print delta_model.get_weights()
-                        print "--- " + str(time.time() - start_time) + " seconds ---"
+                if k == 0:
+                    delta_model = Delta(data, iterations[j], learning_rates[i])
+                    start_time = time.time()
+                    delta_model.fit_no_update()
+                    print delta_model.get_weights()
+                    print "--- " + str(time.time() - start_time) + " seconds ---"
+                    accuracy.append(delta_model.get_accuracy())
+                if k == 1:
+                    delta_model = Delta(data, iterations[j], learning_rates[i])
+                    start_time = time.time()
+                    delta_model.fit_with_update()
+                    print delta_model.get_weights()
+                    print "--- " + str(time.time() - start_time) + " seconds ---"
+                    accuracy.append(delta_model.get_accuracy())
+            show_plot(iterations, accuracy, types[k], learning_rates[i])
 
     start_time = time.time()
     delta_model = Delta(data, 50, 0.2)
@@ -199,4 +211,3 @@ if __name__ == '__main__':
     delta_model.fit_with_adaptive(.9, .95, 1.05)
     print delta_model.get_weights()
     print "--- " + str(time.time() - start_time) + " seconds ---"
-
