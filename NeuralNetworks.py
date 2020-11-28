@@ -61,7 +61,7 @@ class Delta:
 
     def fit_with_update(self):
         # Find some sort of weight
-        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+        self.weights=[1.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
         # For each iteration
         for i in range(self.iterations):
             # For each example
@@ -78,13 +78,13 @@ class Delta:
                     error = true_solution - predicted
                     # Change the weight.
                     self.weights[0] = self.weights[0] + self.learning_rate * error
-                    # Do the updating of all the weights due to the changes. 
+                    
+#                    Do the updating of all the weights due to the changes. 
                     for k in range(len(self.data_obj.pairs[j])):
                         self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
-
     def fit_no_update(self):
         # Find some sort of weight
-        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+        self.weights=[1.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
         # For each iteration
         for i in range(self.iterations):
             # For each example
@@ -102,9 +102,11 @@ class Delta:
                     # Change the weight.
                     self.weights[0] = self.weights[0] + self.learning_rate * error
                     # Don't update.
+            for k in range(len(self.data_obj.pairs[j])):
+                self.weights[k+1] = self.weights[k+1] + self.learning_rate * error * self.data_obj.pairs[j][k]
 
     def fit_with_decay(self, decay_rate):
-        self.weights=[0.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
+        self.weights=[1.0 for i in range(len(self.data_obj.pairs[0]) + 1)]
         initial_learning_rate = self.learning_rate
         # For each iteration
         for i in range(self.iterations):
@@ -159,23 +161,19 @@ if __name__ == '__main__':
     for k in range(len(types) - 2):
         for i in range(len(learning_rates)):
             for j in range(len(iterations)):
-                    if k == 1:
+                    if k == 0:
                         delta_model = Delta(data, iterations[j], learning_rates[i])
                         delta_model.fit_no_update()
                         print delta_model.get_weights()
-                    if k == 2:
+                    if k == 1:
                         delta_model = Delta(data, iterations[j], learning_rates[i])
                         delta_model.fit_with_update()
                         print delta_model.get_weights()
-    
-    
-    
+                
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_decay(0.8)
     print delta_model.get_weights()
-    """
     delta_model = Delta(data, 50, 0.2)
     delta_model.fit_with_adaptive()
     print delta_model.get_weights()
-    """
 
