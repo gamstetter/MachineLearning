@@ -4,18 +4,17 @@
 
 @authors: Grace Gamstetter, Michael Gentile, and Richard Hammond
 """
+import argparse
 import pandas as pd
 import numpy as np
 from random import random
 from math import exp
+from sklearn.model_selection import train_test_split
+
 
 """
 Using this as a placeholder for future data stuff....
 """
-class Data:
-    def __init__(self):
-        self.content = pd.read_csv("data_banknote_authentication.txt")
-
 class Neuron(object):
     def __init__(self, n_inputs, transfer_func=None):
         """
@@ -43,10 +42,10 @@ class Network:
         """
         self.num_hidden = num_hidden
         self.data = data.content.to_numpy()
-        num_inputs = len(self.data[0])
+        self.num_inputs = len(self.data.columns) # total number of features
         
         self.num_classes = len(set([row[-1] for row in self.data]))
-        hidden_layer = [Neuron(num_inputs, transfer_func) for _ in range(self.num_hidden)]
+        hidden_layer = [Neuron(self.num_inputs, transfer_func) for _ in range(self.num_hidden)]
         output_layer = [Neuron(len(hidden_layer)) for _ in range(self.num_classes)]
 
         self.layers = [hidden_layer, output_layer]
@@ -63,29 +62,81 @@ class Network:
                 #expected[row[-1]] = 1
                 total_error += sum([(expected[i]-forward_result[i])**2 for i in range(len(expected))])
 
-    def transfer(self, activation):
-	    return 1.0 / (1.0 + exp(-activation))
-
     def forward_propogate(self, row):
-        temp_row = row
-        for i in self.neural_network:
-            l = []
-            for j in i:
-                active_value = self.activate(j['weights'], row)
-                j['output'] = self.transfer(active_value)
-                l.append(j['output'])
-            temp_row = l
-        return temp_row
+        """
+        @brief Calculate the output of each layer and use it as the input to the next layer
+
+        @parameter row: The initial inputs to the network
+
+        @return The outputs from the last layer
+        """
+        inputs = row
+        for layer in self.layers:
+            previous_layer_outputs = []
+            for neuron in layer:
+                active_value = self.activate(neuron.weights, inputs)
+                neuron.output = neuron.transfer(active_value)
+                previous_layer_outputs.append(neuron.output)
+
+            # the input to the next layer is the output of the previous layer
+            inputs = previous_layer_outputs
+
+        # this would be the inputs to the next layer, but it's the last layer so it's actually the final outputs
+        return inputs
 
     def activate(self, weights, inputs):
+        """
+        @brief Perfrom the function summation(w_i * input_i) + w0
+
+        @param weights: The weight for each feature
+        @param inputs: The feature value
+
+        @return: The summation
+        """
         activation = weights[-1]
         for i in range(len(weights) - 1):
-            activation =  activation + (weights[i] * inputs[i])
+            activation +=  (weights[i] * inputs[i])
         return activation
 
+
+def sigmoid(x):
+    """
+    @brief Represents the sigmoid activation function
+
+    @param x: The value to perform the sigmoid on
+
+    @return The sigmoid of x
+    """
+    return 1.0 / (1.0 + exp(-x))
+
+
+def hyperbolic_tangent(x):
+    """
+    @brief Represents the hyperbolic tangent activation function
+
+    @param x: The value to perfrom the activation function on
+
+    @return: The activation function applied to x
+    """
+    return (exp(x) - exp(-x)) / exp(x) + exp(-x)
+
+
 if __name__ == "__main__":
-    data = Data()
-    # TODO data needs split before here.
+    # import the data from the provided csv
+    parser = argparse.ArgumentParser(description="Neural network for detecting bank note fraud")
+    parser.add_argument("csv_path", help="Path to the csv file containing the bank note data")
+    args = parser.parse_args()
+    data_set = pd.read_csv(args.csv_path)
+    data_set.columns = ["x1", "x2", "x3", "x4", "label"]
+
+    # split data into test, training, and validation
+    df_train, df_test = train_test_split(data_set, test_size=.33, random_state=5)
+    df_train, df_validate = train_test_split(df_train, test_size=.5, random_state=5)
     np.random.seed(1)
-    network = Network(data, 3, False)
-    network.train_network(0.5, 100)
+    
+
+    # TODO loop around this counting down the number of features and using that as the number of hidden neurons
+    network_sigmoid = Network(data, 3, False, sigmoid)
+    network_tan = Network(data, 3, False, hyperbolic_tangent)
+    network_sigmoid.train_network(0.5, 100)
+    network_tan.train_network(0.5, 100)
