@@ -28,6 +28,8 @@ class Neuron(object):
         self.transfer = transfer_func
         self.cost = cost_func
         self.output = None
+        self.error = None
+        self.delta = None
 
         # the hidden layer has a different error calculation than the output layer
         self.error_func = self.output_error if output_layer else self.hidden_error
@@ -52,9 +54,9 @@ class Neuron(object):
 
         @param expected: The expected value of the output
 
-        @return The error for this neuron
+        @return The error
         """
-        return (expected - self.output) * self.cost(self.output)
+        return expected - self.output
 
     def hidden_error(self, out_error):
         """
@@ -63,9 +65,9 @@ class Neuron(object):
         
         @param out_error: The error from the output layer
 
-        @return: This neurons error
+        @return The error
         """
-        return np.dot(np.dot(self.weights, out_error), self.cost(self.output))
+        return np.dot(self.weights, out_error)
 
 
 class Network:
@@ -87,7 +89,7 @@ class Network:
         
         self.num_classes = len(set([row[-1] for row in self.data]))
         hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
-        output_layer = [Neuron(len(hidden_layer)) for _ in range(self.num_classes)]
+        output_layer = [Neuron(len(hidden_layer), output_layer=True) for _ in range(self.num_classes)]
 
         self.layers = [hidden_layer, output_layer]
     
@@ -126,7 +128,25 @@ class Network:
         return inputs
 
     def back_propogate(self):
+        """
+        @brief Staring at the last layer, send the error signal up the layers
+        """
+        # The input driving the error function. We two expected outputs (one per class). These kick off the back propogation.
+        expected_out = [0, 1]
+        for layer_num, layer in reversed(list(enumerate(self.layers))):
+            error_outputs = []
+            for i, neuron in enumerate(layer):
+                # if this is not the last layer, we need to calculate an error per neuron we are connected
+                # to in the next layer
+                if layer_num != len(self.layers) - 1:
+                    neuron.error = 0
+                    for next_neuron in self.layers[layer_num + 1]:
+                        neuron.error += neuron.error_func(next_neuron.error)
+                else:
+                    neuron.error = neuron.error_func(expected_out[i])
 
+                # finally apply the cost function
+                neuron.delta = neuron.error * neuron.cost(neuron.output)
 
 
 def sigmoid(x):
