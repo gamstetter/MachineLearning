@@ -134,7 +134,6 @@ class Network:
         # The input driving the error function. We two expected outputs (one per class). These kick off the back propogation.
         expected_out = [0, 1]
         for layer_num, layer in reversed(list(enumerate(self.layers))):
-            error_outputs = []
             for i, neuron in enumerate(layer):
                 # if this is not the last layer, we need to calculate an error per neuron we are connected
                 # to in the next layer
