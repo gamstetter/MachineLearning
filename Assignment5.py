@@ -8,7 +8,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from random import random
-from math import exp, tanh
+from math import tanh
 from sklearn.model_selection import train_test_split
 
 
@@ -16,19 +16,57 @@ from sklearn.model_selection import train_test_split
 Using this as a placeholder for future data stuff....
 """
 class Neuron(object):
-    def __init__(self, n_inputs, transfer_func=None, cost_func=None):
+    def __init__(self, n_inputs, transfer_func=None, cost_func=None, output_layer=False):
         """
         @brief Represent one neuron in a nural network
 
         @param n_inputs: The number of inputs to this neuron
         @param transfer_func: The function to linearlize the data
         @param cost_func: The derivative of the transfer function
+        @param output_layer: True if this is an output layer neuron, else False
         """
         self.transfer = transfer_func
         self.cost = cost_func
+        self.output = None
+
+        # the hidden layer has a different error calculation than the output layer
+        self.error_func = self.output_error if output_layer else self.hidden_error
 
         # each neuron will add a bias term to the number of inputs
         self.weights = np.random.rand(n_inputs + 1, 1)
+
+    def activate(self, inputs):
+        """
+        @brief Perfrom the dot product of the input and weight vectors
+
+        @param inputs: The feature value or activation from previoius layer
+
+        @return: Activation vector
+        """
+        return np.dot(self.weights, inputs)
+
+
+    def output_error(self, expected):
+        """
+        @brief Error calculation used for the output layer
+
+        @param expected: The expected value of the output
+
+        @return The error for this neuron
+        """
+        return (expected - self.output) * self.cost(self.output)
+
+    def hidden_error(self, out_error):
+        """
+        @brief The error from the output layer is taken and then multiplied by the weights of 
+               the inputs to this neuron.
+        
+        @param out_error: The error from the output layer
+
+        @return: This neurons error
+        """
+        return np.dot(np.dot(self.weights, out_error), self.cost(self.output))
+
 
 class Network:
     """
@@ -77,7 +115,7 @@ class Network:
         for layer in self.layers:
             previous_layer_outputs = []
             for neuron in layer:
-                active_value = self.activate(neuron.weights, inputs)
+                active_value = neuron.activate(inputs)
                 neuron.output = neuron.transfer(active_value)
                 previous_layer_outputs.append(neuron.output)
 
@@ -87,19 +125,8 @@ class Network:
         # this would be the inputs to the next layer, but it's the last layer so it's actually the final outputs
         return inputs
 
-    def activate(self, weights, inputs):
-        """
-        @brief Perfrom the function summation(w_i * input_i) + w0
+    def back_propogate(self):
 
-        @param weights: The weight for each feature
-        @param inputs: The feature value
-
-        @return: The summation
-        """
-        activation = weights[-1]
-        for i in range(len(weights) - 1):
-            activation +=  (weights[i] * inputs[i])
-        return activation
 
 
 def sigmoid(x):
@@ -110,7 +137,7 @@ def sigmoid(x):
 
     @return The sigmoid of x
     """
-    return 1.0 / (1.0 + exp(-x))
+    return 1.0 / (1.0 + np.exp(-x))
 
 
 def sigmoid_cost(output):
@@ -132,7 +159,7 @@ def hyperbolic_tangent(x):
 
     @return: The activation function applied to x
     """
-    return (exp(x) - exp(-x)) / exp(x) + exp(-x)
+    return (np.exp(x) - np.exp(-x)) / np.exp(x) + np.exp(-x)
 
 
 def hyperbolic_cost(output):
@@ -143,7 +170,7 @@ def hyperbolic_cost(output):
 
     @return: The slope
     """
-    return 1 - tanh(output)**2
+    return 1 - np.square(np.tanh(output))
 
 
 if __name__ == "__main__":
@@ -161,6 +188,7 @@ if __name__ == "__main__":
     
 
     # TODO loop around this counting down the number of features and using that as the number of hidden neurons
+    # TODO add a bias "feature"
     network_sigmoid = Network(data, 3, False, sigmoid, sigmoid_cost)
     network_tan = Network(data, 3, False, hyperbolic_tangent, hyperbolic_cost)
     network_sigmoid.train_network(0.5, 100)
