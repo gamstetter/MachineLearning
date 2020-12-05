@@ -8,7 +8,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from random import random
-from math import exp
+from math import exp, tanh
 from sklearn.model_selection import train_test_split
 
 
@@ -16,14 +16,16 @@ from sklearn.model_selection import train_test_split
 Using this as a placeholder for future data stuff....
 """
 class Neuron(object):
-    def __init__(self, n_inputs, transfer_func=None):
+    def __init__(self, n_inputs, transfer_func=None, cost_func=None):
         """
         @brief Represent one neuron in a nural network
 
         @param n_inputs: The number of inputs to this neuron
         @param transfer_func: The function to linearlize the data
+        @param cost_func: The derivative of the transfer function
         """
         self.transfer = transfer_func
+        self.cost = cost_func
 
         # each neuron will add a bias term to the number of inputs
         self.weights = np.random.rand(n_inputs + 1, 1)
@@ -32,20 +34,21 @@ class Network:
     """
     Only going to write this code for the banknote code.
     """
-    def __init__(self, data, num_hidden, transfer_func):
+    def __init__(self, data, num_hidden, transfer_func, cost_func):
         """
         @brief Represent a neural netowrk as a colletion of rows of neurons
         
         @param data: The training data
         @param num_hidden: The number of neurons in the hidden layer
         @param transfer_func: The transfer function that the hidden layer neurons should use
+        @param cost_func: The derivative of the transfer function
         """
         self.num_hidden = num_hidden
         self.data = data.content.to_numpy()
         self.num_inputs = len(self.data.columns) # total number of features
         
         self.num_classes = len(set([row[-1] for row in self.data]))
-        hidden_layer = [Neuron(self.num_inputs, transfer_func) for _ in range(self.num_hidden)]
+        hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
         output_layer = [Neuron(len(hidden_layer)) for _ in range(self.num_classes)]
 
         self.layers = [hidden_layer, output_layer]
@@ -110,6 +113,17 @@ def sigmoid(x):
     return 1.0 / (1.0 + exp(-x))
 
 
+def sigmoid_cost(output):
+    """
+    @brief The derivative of the sigmoid function
+
+    @param output: The output from the sigmoid function
+
+    @return The slope
+    """
+    return output * (1 - output)
+
+
 def hyperbolic_tangent(x):
     """
     @brief Represents the hyperbolic tangent activation function
@@ -119,6 +133,17 @@ def hyperbolic_tangent(x):
     @return: The activation function applied to x
     """
     return (exp(x) - exp(-x)) / exp(x) + exp(-x)
+
+
+def hyperbolic_cost(output):
+    """
+    @brief Represents the derivative of the hyperbolic tangent
+
+    @param output: The output of the hyperbolic tangent
+
+    @return: The slope
+    """
+    return 1 - tanh(output)**2
 
 
 if __name__ == "__main__":
@@ -136,7 +161,7 @@ if __name__ == "__main__":
     
 
     # TODO loop around this counting down the number of features and using that as the number of hidden neurons
-    network_sigmoid = Network(data, 3, False, sigmoid)
-    network_tan = Network(data, 3, False, hyperbolic_tangent)
+    network_sigmoid = Network(data, 3, False, sigmoid, sigmoid_cost)
+    network_tan = Network(data, 3, False, hyperbolic_tangent, hyperbolic_cost)
     network_sigmoid.train_network(0.5, 100)
     network_tan.train_network(0.5, 100)
