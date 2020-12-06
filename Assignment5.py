@@ -75,7 +75,7 @@ class Network:
     """
     Only going to write this code for the banknote code.
     """
-    def __init__(self, data, num_hidden, transfer_func, cost_func):
+    def __init__(self, data, num_hidden, transfer_func, cost_func, epochs=1000, lrate=0.01):
         """
         @brief Represent a neural netowrk as a colletion of rows of neurons
         
@@ -83,33 +83,32 @@ class Network:
         @param num_hidden: The number of neurons in the hidden layer
         @param transfer_func: The transfer function that the hidden layer neurons should use
         @param cost_func: The derivative of the transfer function
+        @param epochs: Number of iterations
+        @param lrate: The learning rate
         """
         self.num_hidden = num_hidden
         # Get rid of the answer.
-        self.data = data.drop(columns=['label'])
+        data = data.drop(columns=['label'])
         self.data = data.to_numpy()
-        self.num_inputs = self.data.shape[1] # total number of features
-        self.num_inputs = len(data.columns)
-        self.output_amount = len(set([row[-1] for row in self.data]))
-        #self.num_classes = len(set([row[-1] for row in self.data]))
+        self.num_inputs = len(data.columns) # total number of features
         self.num_classes = 2
+        self.epochs = epochs
+        self.lrate = lrate
         hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
         output_layer = [Neuron(len(hidden_layer), transfer_func, cost_func, output_layer=True) for _ in range(self.num_classes)]
 
         self.layers = [hidden_layer, output_layer]
     
-    def train_network(self, learning_rate, len_epochs):
+    def train_network(self):
         """
         Use the data in the class to train us.
         """
-        for epoch in range(0, len_epochs, 1):
+        for epoch in range(self.epochs):
             total_error = 0
             for row in self.data:
-                forward_result = self.forward_propogate(row)
-                expected = [0 for i in range(self.output_amount)]
-                #expected[row[-1]] = 1
-                total_error += sum([(expected[i]-forward_result[i])**2 for i in range(len(expected))])
-                backward_result = self.back_propogate()
+                self.forward_propogate(row)
+                self.back_propogate()
+                self.update_weights(row)
 
     def forward_propogate(self, row):
         """
@@ -130,9 +129,6 @@ class Network:
             # the input to the next layer is the output of the previous layer
             inputs = previous_layer_outputs
 
-        # this would be the inputs to the next layer, but it's the last layer so it's actually the final outputs
-        return inputs
-
     def back_propogate(self):
         """
         @brief Staring at the last layer, send the error signal up the layers
@@ -152,6 +148,22 @@ class Network:
 
                 # finally apply the cost function
                 neuron.delta = neuron.error * neuron.cost(neuron.output)
+
+    def update_weights(self, row):
+        """
+        Updat the weights for each neuron in the network
+        """
+        # data is the input to the first layer
+        input = row
+        for layer in self.layers:
+            neuron_output = []
+            for neuron in layer:
+                neuron_output.append(neuron.output)
+                neuron.weights += self.lrate * neuron.delta * input
+
+            # all the neuron outputs become the new inputs to the next layer
+            input = neuron_output
+
 
 
 def sigmoid(x):
