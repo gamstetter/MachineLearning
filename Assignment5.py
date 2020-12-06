@@ -103,12 +103,35 @@ class Network:
         """
         Use the data in the class to train us.
         """
-        for epoch in range(self.epochs):
-            total_error = 0
+        for _ in range(self.epochs):
             for row in self.data:
                 self.forward_propogate(row)
                 self.back_propogate()
                 self.update_weights(row)
+
+    def predict(self, rows, y):
+        """
+        Calculate the probability of each row belonging to the '0' or '1' class
+
+        @param rows: The dataset as a numpy 
+        @param y: The expected output for the row
+
+        @return Tuple in the form The predicted classes, the accuracy
+        """
+        predicted = []
+        num_correct = 0
+        for row, expected in zip(rows, y):
+            outputs = self.forward_propogate(row)
+            class_prediction = outputs.index(max(outputs))
+            predicted.append(class_prediction)
+
+            # keep track of correct predictions
+            if class_prediction == expected:
+                num_correct += 1
+        
+        return predicted, (num_correct/float(len(rows)))
+
+            
 
     def forward_propogate(self, row):
         """
@@ -128,6 +151,9 @@ class Network:
 
             # the input to the next layer is the output of the previous layer
             inputs = previous_layer_outputs
+
+        # this would be the inputs to the next layer, but since it is the last layer it is the output
+        return inputs
 
     def back_propogate(self):
         """
