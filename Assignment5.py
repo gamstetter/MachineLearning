@@ -16,6 +16,7 @@ from sklearn.model_selection import train_test_split
 Using this as a placeholder for future data stuff....
 """
 class Neuron(object):
+
     def __init__(self, n_inputs, transfer_func=None, cost_func=None, output_layer=False):
         """
         @brief Represent one neuron in a nural network
@@ -93,7 +94,7 @@ class Network:
         #self.num_classes = len(set([row[-1] for row in self.data]))
         self.num_classes = 2
         hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
-        output_layer = [Neuron(len(hidden_layer), transfer_func, output_layer=True) for _ in range(self.num_classes)]
+        output_layer = [Neuron(len(hidden_layer), transfer_func, cost_func, output_layer=True) for _ in range(self.num_classes)]
 
         self.layers = [hidden_layer, output_layer]
     
@@ -108,6 +109,7 @@ class Network:
                 expected = [0 for i in range(self.output_amount)]
                 #expected[row[-1]] = 1
                 total_error += sum([(expected[i]-forward_result[i])**2 for i in range(len(expected))])
+                backward_result = self.back_propogate()
 
     def forward_propogate(self, row):
         """
@@ -209,11 +211,13 @@ if __name__ == "__main__":
     df_train, df_test = train_test_split(data_set, test_size=.33, random_state=5)
     df_train, df_validate = train_test_split(df_train, test_size=.5, random_state=5)
     np.random.seed(1)
-    
+    # A training set is used for learning to fit the percepetrons correctly.
+    # A validation set tunes the parameters to the optimal number of hidden units and to determine stopping point.
+    # A test set evaluates the the two.
 
     # TODO loop around this counting down the number of features and using that as the number of hidden neurons
-    # TODO add a bias "feature"
     network_sigmoid = Network(df_train, 3, sigmoid, sigmoid_cost)
-    network_tan = Network(df_train, 3, hyperbolic_tangent, hyperbolic_cost)
     network_sigmoid.train_network(0.5, 100)
+    
+    network_tan = Network(df_train, 3, hyperbolic_tangent, hyperbolic_cost)
     network_tan.train_network(0.5, 100)
