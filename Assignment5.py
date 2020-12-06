@@ -95,16 +95,18 @@ class Network:
         self.num_classes = 2
         self.epochs = epochs
         self.lrate = lrate
-        hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
-        output_layer = [Neuron(len(hidden_layer), transfer_func, cost_func, output_layer=True) for _ in range(self.num_classes)]
+        self.layers = []
+        for i in range(self.num_hidden):
+            self.layers.append([Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_inputs)])
+        output_layer = [Neuron(self.num_inputs, transfer_func, cost_func, output_layer=True) for _ in range(self.num_classes)]
 
-        self.layers = [hidden_layer, output_layer]
+        self.layers.append(output_layer)
     
     def train_network(self):
         """
         Use the data in the class to train us.
         """
-        for _ in range(self.epochs):
+        for i in range(self.epochs):
             for row in self.data:
                 self.forward_propogate(row)
                 self.back_propogate()
@@ -187,7 +189,7 @@ class Network:
             neuron_output = []
             for neuron in layer:
                 neuron_output.append(neuron.output)
-                neuron.weights += self.lrate * np.dot(neuron.delta, input)
+                neuron.weights += self.lrate * np.dot(neuron.delta, row)
                 neuron.bias += self.lrate * neuron.delta
 
             # all the neuron outputs become the new inputs to the next layer
@@ -258,11 +260,12 @@ if __name__ == "__main__":
     for hidden_neurons in range(len(data_set.columns) - 1, 1, -1):
         network_sigmoid = Network(df_train, hidden_neurons, sigmoid, sigmoid_cost)
         network_sigmoid.train_network()
+        print "Finished training sigmoid"
         _, accuracy = network_sigmoid.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
-        
+        print accuracy
         network_tan = Network(df_train, hidden_neurons, hyperbolic_tangent, hyperbolic_cost)
         # TODO: fix overflow warning in tan function
         network_tan.train_network()
-        network_tan.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
-
+        _, accuracy = network_tan.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+        print accuracy
     # TODO: use the optimal number of hidden neurons along with the optimal transfer function (tan or sigmoid) on df_test
