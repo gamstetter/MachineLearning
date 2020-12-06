@@ -35,8 +35,9 @@ class Neuron(object):
         # the hidden layer has a different error calculation than the output layer
         self.error_func = self.output_error if output_layer else self.hidden_error
 
-        # each neuron will add a bias term to the number of inputs
+        # each has a weight per input plus a bias term
         self.weights = np.random.random_sample(n_inputs)
+        self.bias = np.random.random_sample(1)[0]
 
     def activate(self, inputs):
         """
@@ -46,7 +47,7 @@ class Neuron(object):
 
         @return: Activation vector
         """
-        return np.dot(self.weights, inputs)
+        return np.dot(self.weights, inputs) + self.bias
 
 
     def output_error(self, expected):
@@ -75,7 +76,7 @@ class Network:
     """
     Only going to write this code for the banknote code.
     """
-    def __init__(self, data, num_hidden, transfer_func, cost_func, epochs=1000, lrate=0.01):
+    def __init__(self, data, num_hidden, transfer_func, cost_func, epochs=25, lrate=0.01):
         """
         @brief Represent a neural netowrk as a colletion of rows of neurons
         
@@ -122,6 +123,7 @@ class Network:
         num_correct = 0
         for row, expected in zip(rows, y):
             outputs = self.forward_propogate(row)
+            outputs = [outputs[0][0], outputs[1][0]] # TODO: there should be one output per neuron, for some reason we get a list. This line shouldn't be needed
             class_prediction = outputs.index(max(outputs))
             predicted.append(class_prediction)
 
@@ -185,11 +187,11 @@ class Network:
             neuron_output = []
             for neuron in layer:
                 neuron_output.append(neuron.output)
-                neuron.weights += self.lrate * neuron.delta * input
+                neuron.weights += self.lrate * np.dot(neuron.delta, input)
+                neuron.bias += self.lrate * neuron.delta
 
             # all the neuron outputs become the new inputs to the next layer
             input = neuron_output
-
 
 
 def sigmoid(x):
@@ -245,7 +247,6 @@ if __name__ == "__main__":
     data_set.columns = ["x1", "x2", "x3", "x4", "label"]
 
     # split data into test, training, and validation
-    data_set["bias"] = np.ones(len(data_set))
     df_train, df_test = train_test_split(data_set, test_size=.33, random_state=5)
     df_train, df_validate = train_test_split(df_train, test_size=.5, random_state=5)
     np.random.seed(1)
@@ -253,9 +254,15 @@ if __name__ == "__main__":
     # A validation set tunes the parameters to the optimal number of hidden units and to determine stopping point.
     # A test set evaluates the the two.
 
-    # TODO loop around this counting down the number of features and using that as the number of hidden neurons
-    network_sigmoid = Network(df_train, 3, sigmoid, sigmoid_cost)
-    network_sigmoid.train_network(0.5, 100)
-    
-    network_tan = Network(df_train, 3, hyperbolic_tangent, hyperbolic_cost)
-    network_tan.train_network(0.5, 100)
+    # get accuracy statistics for different transfer functions and number of hidden neurons
+    for hidden_neurons in range(len(data_set.columns) - 1, 1, -1):
+        network_sigmoid = Network(df_train, hidden_neurons, sigmoid, sigmoid_cost)
+        network_sigmoid.train_network()
+        _, accuracy = network_sigmoid.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+        
+        network_tan = Network(df_train, hidden_neurons, hyperbolic_tangent, hyperbolic_cost)
+        # TODO: fix overflow warning in tan function
+        network_tan.train_network()
+        network_tan.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+
+    # TODO: use the optimal number of hidden neurons along with the optimal transfer function (tan or sigmoid) on df_test
