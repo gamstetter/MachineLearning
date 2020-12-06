@@ -35,7 +35,7 @@ class Neuron(object):
         self.error_func = self.output_error if output_layer else self.hidden_error
 
         # each neuron will add a bias term to the number of inputs
-        self.weights = np.random.rand(n_inputs + 1, 1)
+        self.weights = np.random.random_sample(n_inputs)
 
     def activate(self, inputs):
         """
@@ -84,12 +84,16 @@ class Network:
         @param cost_func: The derivative of the transfer function
         """
         self.num_hidden = num_hidden
+        # Get rid of the answer.
+        self.data = data.drop(columns=['label'])
         self.data = data.to_numpy()
-        self.num_inputs = self.data.shape[0] # total number of features
-        
-        self.num_classes = len(set([row[-1] for row in self.data]))
+        self.num_inputs = self.data.shape[1] # total number of features
+        self.num_inputs = len(data.columns)
+        self.output_amount = len(set([row[-1] for row in self.data]))
+        #self.num_classes = len(set([row[-1] for row in self.data]))
+        self.num_classes = 2
         hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
-        output_layer = [Neuron(len(hidden_layer), output_layer=True) for _ in range(self.num_classes)]
+        output_layer = [Neuron(len(hidden_layer), transfer_func, output_layer=True) for _ in range(self.num_classes)]
 
         self.layers = [hidden_layer, output_layer]
     
@@ -201,6 +205,7 @@ if __name__ == "__main__":
     data_set.columns = ["x1", "x2", "x3", "x4", "label"]
 
     # split data into test, training, and validation
+    data_set["bias"] = np.ones(len(data_set))
     df_train, df_test = train_test_split(data_set, test_size=.33, random_state=5)
     df_train, df_validate = train_test_split(df_train, test_size=.5, random_state=5)
     np.random.seed(1)
