@@ -84,8 +84,8 @@ class Network:
         @param cost_func: The derivative of the transfer function
         """
         self.num_hidden = num_hidden
-        self.data = data.content.to_numpy()
-        self.num_inputs = len(self.data.columns) # total number of features
+        self.data = data.to_numpy()
+        self.num_inputs = self.data.shape[0] # total number of features
         
         self.num_classes = len(set([row[-1] for row in self.data]))
         hidden_layer = [Neuron(self.num_inputs, transfer_func, cost_func) for _ in range(self.num_hidden)]
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
     # TODO loop around this counting down the number of features and using that as the number of hidden neurons
     # TODO add a bias "feature"
-    network_sigmoid = Network(data, 3, False, sigmoid, sigmoid_cost)
-    network_tan = Network(data, 3, False, hyperbolic_tangent, hyperbolic_cost)
+    network_sigmoid = Network(df_train, 3, sigmoid, sigmoid_cost)
+    network_tan = Network(df_train, 3, hyperbolic_tangent, hyperbolic_cost)
     network_sigmoid.train_network(0.5, 100)
     network_tan.train_network(0.5, 100)
