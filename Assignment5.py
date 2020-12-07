@@ -36,8 +36,7 @@ class Neuron(object):
         self.error_func = self.output_error if output_layer else self.hidden_error
 
         # each has a weight per input plus a bias term
-        self.weights = np.random.random_sample(n_inputs)
-        self.bias = np.random.random_sample(1)[0]
+        self.weights = np.random.random_sample(n_inputs + 1)
 
     def activate(self, inputs):
         """
@@ -47,7 +46,7 @@ class Neuron(object):
 
         @return: Activation vector
         """
-        return np.dot(self.weights, inputs) + self.bias
+        return np.dot(self.weights[:-1], inputs) + self.weights[-1]
 
 
     def output_error(self, expected):
@@ -88,6 +87,7 @@ class Network:
         @param lrate: The learning rate
         """
         self.num_hidden = num_hidden
+        self.labels = data["label"].to_numpy()
         # Get rid of the answer.
         data = data.drop(columns=['label'])
         self.data = data.to_numpy()
@@ -105,9 +105,12 @@ class Network:
         Use the data in the class to train us.
         """
         for _ in range(self.epochs):
-            for row in self.data:
+            for label, row in zip(self.labels, self.data):
                 self.forward_propogate(row)
-                self.back_propogate()
+
+                # figure out the class probabilities
+                expected = [0, 1] if label else [1, 0]
+                self.back_propogate(expected)
                 self.update_weights(row)
 
     def predict(self, rows, y):
@@ -123,7 +126,6 @@ class Network:
         num_correct = 0
         for row, expected in zip(rows, y):
             outputs = self.forward_propogate(row)
-            outputs = [outputs[0][0], outputs[1][0]] # TODO: there should be one output per neuron, for some reason we get a list. This line shouldn't be needed
             class_prediction = outputs.index(max(outputs))
             predicted.append(class_prediction)
 
@@ -133,7 +135,6 @@ class Network:
         
         return predicted, (num_correct/float(len(rows)))
 
-            
 
     def forward_propogate(self, row):
         """
@@ -157,12 +158,11 @@ class Network:
         # this would be the inputs to the next layer, but since it is the last layer it is the output
         return inputs
 
-    def back_propogate(self):
+    def back_propogate(self, expected_out):
         """
         @brief Staring at the last layer, send the error signal up the layers
         """
         # The input driving the error function. We two expected outputs (one per class). These kick off the back propogation.
-        expected_out = [0, 1]
         for layer_num, layer in reversed(list(enumerate(self.layers))):
             for i, neuron in enumerate(layer):
                 # if this is not the last layer, we need to calculate an error per neuron we are connected
@@ -170,7 +170,7 @@ class Network:
                 if layer_num != len(self.layers) - 1:
                     neuron.error = 0
                     for next_neuron in self.layers[layer_num + 1]:
-                        neuron.error += neuron.error_func(next_neuron.error)
+                        neuron.error += next_neuron.delta * next_neuron.weights[i]
                 else:
                     neuron.error = neuron.error_func(expected_out[i])
 
@@ -187,8 +187,7 @@ class Network:
             neuron_output = []
             for neuron in layer:
                 neuron_output.append(neuron.output)
-                neuron.weights += self.lrate * np.dot(neuron.delta, input)
-                neuron.bias += self.lrate * neuron.delta
+                neuron.weights += self.lrate * np.dot(neuron.delta, np.append(input, 1))
 
             # all the neuron outputs become the new inputs to the next layer
             input = neuron_output
@@ -224,7 +223,7 @@ def hyperbolic_tangent(x):
 
     @return: The activation function applied to x
     """
-    return (np.exp(x) - np.exp(-x)) / np.exp(x) + np.exp(-x)
+    return (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
 
 
 def hyperbolic_cost(output):
@@ -255,14 +254,16 @@ if __name__ == "__main__":
     # A test set evaluates the the two.
 
     # get accuracy statistics for different transfer functions and number of hidden neurons
-    for hidden_neurons in range(len(data_set.columns) - 1, 1, -1):
+    for hidden_neurons in range(len(data_set.columns) - 1, 0, -1):
         network_sigmoid = Network(df_train, hidden_neurons, sigmoid, sigmoid_cost)
         network_sigmoid.train_network()
         _, accuracy = network_sigmoid.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+        print "Accuracy {} with {} hidden nodes using sigmoid".format(accuracy, hidden_neurons)
         
+    for hidden_neurons in range(len(data_set.columns) - 1, 0, -1):
         network_tan = Network(df_train, hidden_neurons, hyperbolic_tangent, hyperbolic_cost)
-        # TODO: fix overflow warning in tan function
         network_tan.train_network()
-        network_tan.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+        _, accuracy = network_tan.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+        print "Accuracy {} with {} hidden nodes using tan".format(accuracy, hidden_neurons)
 
     # TODO: use the optimal number of hidden neurons along with the optimal transfer function (tan or sigmoid) on df_test
