@@ -281,7 +281,7 @@ if __name__ == "__main__":
             best_accuracy_cost = hyperbolic_cost
 
     print "\nHighest accuracy was " + str(best_accuracy) + " using " + (" sigmoid" if best_accuracy_activation is sigmoid else " tan")
-    network_best = Network(df_test, best_accuracy_num_neurons, best_accuracy_activation, best_accuracy_cost)
+    network_best = Network(df_train, best_accuracy_num_neurons, best_accuracy_activation, best_accuracy_cost)
     network_best.train_network()
-    _, accuracy = network_best.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+    _, accuracy = network_best.predict(df_test.drop(columns="label").to_numpy(), df_test["label"].to_numpy())
     print "Accuracy {} of test set using optimal conditions".format(accuracy)
