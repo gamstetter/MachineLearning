@@ -252,6 +252,10 @@ if __name__ == "__main__":
     # A training set is used for learning to fit the percepetrons correctly.
     # A validation set tunes the parameters to the optimal number of hidden units and to determine stopping point.
     # A test set evaluates the the two.
+    best_accuracy = 0
+    best_accuracy_num_neurons = 0
+    best_accuracy_activation = None
+    best_accuracy_cost = None
 
     # get accuracy statistics for different transfer functions and number of hidden neurons
     for hidden_neurons in range(len(data_set.columns) - 1, 0, -1):
@@ -259,11 +263,25 @@ if __name__ == "__main__":
         network_sigmoid.train_network()
         _, accuracy = network_sigmoid.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
         print "Accuracy {} with {} hidden nodes using sigmoid".format(accuracy, hidden_neurons)
-        
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            best_accuracy_num_neurons = hidden_neurons
+            best_accuracy_activation = sigmoid
+            best_accuracy_cost = sigmoid_cost
+
     for hidden_neurons in range(len(data_set.columns) - 1, 0, -1):
         network_tan = Network(df_train, hidden_neurons, hyperbolic_tangent, hyperbolic_cost)
         network_tan.train_network()
         _, accuracy = network_tan.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
         print "Accuracy {} with {} hidden nodes using tan".format(accuracy, hidden_neurons)
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            best_accuracy_num_neurons = hidden_neurons
+            best_accuracy_activation = hyperbolic_tangent
+            best_accuracy_cost = hyperbolic_cost
 
-    # TODO: use the optimal number of hidden neurons along with the optimal transfer function (tan or sigmoid) on df_test
+    print "\nHighest accuracy was " + str(best_accuracy) + " using " + (" sigmoid" if best_accuracy_activation is sigmoid else " tan")
+    network_best = Network(df_test, best_accuracy_num_neurons, best_accuracy_activation, best_accuracy_cost)
+    network_best.train_network()
+    _, accuracy = network_best.predict(df_validate.drop(columns="label").to_numpy(), df_validate["label"].to_numpy())
+    print "Accuracy {} of test set using optimal conditions".format(accuracy)
